@@ -1,9 +1,9 @@
 {
   "name": "@local/dsh-navigation-rail",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
-  "description": "ChatGPT-style home composer, caption navigation and persistent sidebar for DeepSeek Harness 0.2.1-rc.5.",
+  "description": "ChatGPT-style home, native caption navigation and hover conversation drawer for DeepSeek Harness 0.2.1-rc.5.",
   "exports": {
     ".": "./index.js",
     "./package.json": "./package.json"

@@ -398,6 +398,19 @@ html[data-windows-titlebar]:root{--dsh-windows-menu-start:112px!important}
         .dsh-balance-button[data-status=failed]{opacity:.5}.dsh-balance-dot{fill:currentColor;opacity:.6}.dsh-balance-multiple{position:absolute;right:-1px;bottom:-4px;max-width:34px;font-size:9px;line-height:11px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary);background:var(--dsw-specific-sidebar-fill);border-radius:4px;padding:0 2px;overflow:hidden;text-overflow:ellipsis}
         html[data-as-reduced-motion=true] .dsh-conversation-drawer,html[data-as-reduced-motion=true] .dsh-balance-fill,html[data-as-reduced-motion=true] .dsh-balance-arc{transition:none}
         @media(prefers-reduced-motion:reduce){.mP3x-q_frame,.dsh-balance-fill,.dsh-conversation-drawer,.dsh-balance-arc{transition:none!important}}
+        /* In the collapsed state, the border and clipped surface share one box.
+           This avoids independent corner paths in the frame overlay and content. */
+        .mP3x-q_frame[data-sidebar-collapsed=true]:has(.dsh-navigation-shell)::after{display:none}
+        .mP3x-q_frame[data-sidebar-collapsed=true]:has(.dsh-navigation-shell)>.mP3x-q_centerCol{box-sizing:border-box;border:1px solid color-mix(in srgb,var(--dsw-alias-label-primary) 16%,transparent);border-right:0;border-radius:14px 0 0 14px;background-clip:padding-box}
+        .mP3x-q_frame[data-sidebar-collapsed=true]>.mP3x-q_sidebarCol:has(.dsh-navigation-shell){position:relative;z-index:16;overflow:visible}
+        .dsh-navigation-shell[data-conversations-hidden=true]{overflow:visible}
+        .mP3x-q_frame:has(.dsh-navigation-shell) .dsh-conversation-drawer[data-preview=true]{position:absolute;z-index:18;left:64px;top:8px;bottom:8px;height:auto;max-width:calc(100vw - 80px);overflow:visible;border:1px solid var(--dsw-alias-border-l3);border-radius:14px;background:var(--dsw-alias-bg-layer-1);box-shadow:var(--dsw-elevation-prominent,0 12px 36px rgb(0 0 0 / .24));opacity:1;visibility:visible;transform:none;pointer-events:auto;transition:opacity 120ms ease,transform 160ms ease}
+        .dsh-conversation-drawer[data-preview=true]>.dsh-drawer-content{overflow:hidden;border-radius:inherit}
+        /* The transparent bridge remains part of the preview hit area. */
+        .dsh-conversation-drawer[data-preview=true]::before{content:"";position:absolute;left:-18px;top:0;bottom:0;width:18px}
+        @media(prefers-reduced-motion:reduce){.dsh-conversation-drawer[data-preview=true]{transition:none}}
+        @media(forced-colors:active){.dsh-conversation-drawer[data-preview=true]{background:Canvas;border-color:CanvasText}}
+
         `;
 
         // Split the integer decimal string before converting the sub-10 remainder.
@@ -480,24 +493,92 @@ html[data-windows-titlebar]:root{--dsh-windows-menu-start:112px!important}
                     reserve&&h('span',{className:'dsh-balance-multiple','aria-hidden':true},value.count+'×')));
         }
 
-		function SidebarRoot({ collapsed, width, startSession, toggleSidebar, selectPanel, setPinned, trackEntryClick, usePanels, useEntryPins, useEntryActions, useShortcuts, usePanelInfo, useBalance, refreshBalance, t, renderSlot }) {
+        function SidebarRoot({ collapsed, width, startSession, toggleSidebar, selectPanel, setPinned, trackEntryClick, usePanels, useEntryPins, useEntryActions, useShortcuts, usePanelInfo, useBalance, refreshBalance, t, renderSlot }) {
             const h = react.createElement;
             const panels = usePanels(s => s);
             const unpinned = useEntryPins(s => s);
             const activePanelId = usePanelInfo(s => s.activePanelId);
             const hasEntryActions = useEntryActions(s => s);
-            const shortcut = useShortcuts(rows => rows.find(row => row.id === 'sidebar.left.toggle'));
             const newShortcut = useShortcuts(rows => rows.find(row => row.id === 'session.new'));
-            const toggleLabel = collapsed ? t('toggle.open') : t('toggle.collapse');
-            const drawerWidth=react.useRef(Math.max(264,width-56));
-            if(!collapsed)drawerWidth.current=Math.max(264,width-56);
+            const drawerWidth = react.useRef(Math.max(264, width - 56));
+            if (!collapsed) drawerWidth.current = Math.max(264, width - 56);
+            const [previewOpen, setPreviewOpen] = react.useState(false);
+            const homeRef = react.useRef(null);
+            const drawerRef = react.useRef(null);
+            const hover = react.useRef({home:false,drawer:false,keyboard:false,openTimer:null,closeTimer:null});
+            const preview = collapsed && previewOpen;
+            const visible = !collapsed || preview;
+            const clearTimers = () => {
+                clearTimeout(hover.current.openTimer);
+                clearTimeout(hover.current.closeTimer);
+                hover.current.openTimer = hover.current.closeTimer = null;
+            };
+            const closePreview = () => { clearTimers(); hover.current.keyboard = false; setPreviewOpen(false); };
+            const holdPreview = () => { clearTimeout(hover.current.closeTimer); hover.current.closeTimer = null; };
+            const scheduleClose = () => {
+                clearTimeout(hover.current.openTimer);
+                clearTimeout(hover.current.closeTimer);
+                hover.current.closeTimer = setTimeout(() => {
+                    const state = hover.current;
+                    if (state.home || state.drawer) return;
+                    // Workspace menus and dialogs render in portals. Keep the drawer
+                    // mounted until those operations end, including native folder picking.
+                    if (document.querySelector('[role="menu"], [role="dialog"], [aria-modal="true"]')) { scheduleClose(); return; }
+                    if (state.keyboard && (homeRef.current?.contains(document.activeElement) || drawerRef.current?.contains(document.activeElement))) return;
+                    setPreviewOpen(false);
+                }, 260);
+            };
+            const enterHome = event => {
+                if (!collapsed || event.pointerType === 'touch') return;
+                hover.current.home = true;
+                hover.current.keyboard = false;
+                holdPreview();
+                if (previewOpen) return;
+                clearTimeout(hover.current.openTimer);
+                hover.current.openTimer = setTimeout(() => setPreviewOpen(true), 160);
+            };
+            const leaveHome = () => { hover.current.home = false; if (collapsed) scheduleClose(); };
+            react.useEffect(() => {
+                clearTimers(); hover.current.home = hover.current.drawer = hover.current.keyboard = false;
+                setPreviewOpen(false);
+                return clearTimers;
+            }, [collapsed]);
+            react.useEffect(() => {
+                if (!preview) return;
+                const outside = event => {
+                    if (!(event.target instanceof Element)) return;
+                    if (homeRef.current?.contains(event.target) || drawerRef.current?.contains(event.target)) return;
+                    if (event.target.closest('[role="menu"], [role="dialog"], [aria-modal="true"]')) return;
+                    closePreview();
+                };
+                const escape = event => {
+                    if (event.key !== 'Escape' || document.querySelector('[role="menu"], [role="dialog"], [aria-modal="true"]')) return;
+                    if (drawerRef.current?.contains(document.activeElement)) homeRef.current?.focus({preventScroll:true});
+                    closePreview();
+                };
+                const focus = event => { if (hover.current.keyboard) outside(event); };
+                window.addEventListener('pointerdown', outside, true);
+                window.addEventListener('keydown', escape);
+                window.addEventListener('focusin', focus);
+                window.addEventListener('blur', closePreview);
+                return () => {
+                    window.removeEventListener('pointerdown', outside, true);
+                    window.removeEventListener('keydown', escape);
+                    window.removeEventListener('focusin', focus);
+                    window.removeEventListener('blur', closePreview);
+                };
+            }, [preview]);
             const openNew = () => { trackEntryClick({menu_name:'new_session',position:'sidebar'}); startSession(); };
-            const iconButton = (label, action, glyph, extra={}) => h(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {label,side:'right',delayMs:350},
+            const iconButton = (label, action, glyph, extra={}) => h(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {label,side:'right',delayMs:350,disabled:preview},
                 h('button',{type:'button',className:'dsh-rail-button','aria-label':label,onClick:action,...extra},glyph));
-            return h('div', {className:'dsh-navigation-shell','data-conversations-hidden':collapsed||undefined},
+            return h('div', {className:'dsh-navigation-shell','data-conversations-hidden':collapsed||undefined,'data-hover-preview':preview||undefined},
                 h('style',null,RAIL_CSS),
                 h('aside', {className:'dsh-function-rail','aria-label':t('panels.label')},
-                    iconButton(t('rail.home'),openNew,h('svg',{width:19,height:19,viewBox:'0 0 24 24',fill:'currentColor','aria-hidden':true},h('path',{d:'M3.5 10.1 11 3.7a1.5 1.5 0 0 1 2 0l7.5 6.4v9.2a1.7 1.7 0 0 1-1.7 1.7h-4.3v-6.3h-5V21H5.2a1.7 1.7 0 0 1-1.7-1.7z'})),{'aria-current':activePanelId===null?'page':undefined}),
+                    iconButton(t('rail.home'),openNew,h('svg',{width:19,height:19,viewBox:'0 0 24 24',fill:'currentColor','aria-hidden':true},h('path',{d:'M3.5 10.1 11 3.7a1.5 1.5 0 0 1 2 0l7.5 6.4v9.2a1.7 1.7 0 0 1-1.7 1.7h-4.3v-6.3h-5V21H5.2a1.7 1.7 0 0 1-1.7-1.7z'})),{
+                        ref:homeRef,'aria-current':activePanelId===null?'page':undefined,'aria-controls':'dsh-conversation-drawer','aria-expanded':visible,
+                        onPointerEnter:enterHome,onPointerLeave:leaveHome,
+                        onKeyDown:event=>{if(collapsed&&(event.key==='ArrowRight'||event.key==='ArrowDown')){event.preventDefault();clearTimers();hover.current.keyboard=true;setPreviewOpen(true);requestAnimationFrame(()=>drawerRef.current?.querySelector('button')?.focus({preventScroll:true}));}}
+                    }),
                     h('nav',{className:'dsh-rail-nav '+SidebarRoot_module_css_default.collapsed,'aria-label':t('panels.label')},
                         panels.filter(({id})=>id==='plugins'||!unpinned.includes(id)).map(({id,label})=>h(PanelRow,{key:id,id,label,wide:false,usePanelInfo,selectPanel,trackEntryClick,renderSlot})),
                         hasEntryActions && h(PanelMoreMenu,{wide:false,label:t('panels.more'),entries:panels.filter(p=>p.id!=='plugins').map(p=>({...p,pinned:!unpinned.includes(p.id),active:p.id===activePanelId})),onOpen:selectPanel,onPinnedChange:setPinned,trackEntryClick,renderSlot})),
@@ -505,12 +586,19 @@ html[data-windows-titlebar]:root{--dsh-windows-menu-start:112px!important}
                         h(BalanceRing,{useBalance,refreshBalance,t}),
                         h('div',{className:'dsh-rail-extra'},renderSlot('sidebar.footer.action',{wide:false})),
                         h('div',{className:'dsh-rail-account'},renderSlot('sidebar.settings',{wide:false})))),
-                h('section',{id:'dsh-conversation-drawer',className:'dsh-conversation-drawer','data-closed':collapsed||undefined,'aria-hidden':collapsed,inert:collapsed?'':undefined,'aria-label':t('rail.chats'),style:{width:collapsed?0:Math.max(0,width-56)}},
-                  h('div',{className:'dsh-drawer-content',style:{width:drawerWidth.current}},
+                h('section',{
+                    ref:drawerRef,id:'dsh-conversation-drawer',className:'dsh-conversation-drawer',
+                    'data-closed':!visible||undefined,'data-preview':preview||undefined,'aria-hidden':!visible,inert:!visible?'':undefined,'aria-label':t('rail.chats'),
+                    onPointerEnter:()=>{hover.current.drawer=true;holdPreview();},
+                    onPointerLeave:()=>{hover.current.drawer=false;if(collapsed)scheduleClose();},
+                    onBlur:()=>{if(collapsed&&hover.current.keyboard)scheduleClose();},
+                    style:{width:collapsed?(preview?drawerWidth.current:0):Math.max(0,width-56)}
+                },
+                  h('div',{className:'dsh-drawer-content',style:{width:preview?'100%':drawerWidth.current}},
                     h('header',{className:'dsh-drawer-header'},
                         h('span',{className:'dsh-drawer-brand'},renderSlot('sidebar.brand.mark',{size:23},{fallback:h(_deepseek_ai_dsh_client_ui_primitives.FishLogo,{size:23})}),h('span',{className:'dsh-drawer-wordmark'},renderSlot('sidebar.brand.name',{},{fallback:'DeepSeek Harness'})))),
                     h('button',{type:'button',className:'dsh-drawer-new','aria-label':t('session.new.label'),'aria-keyshortcuts':newShortcut?.aria,onClick:openNew},h(_deepseek_ai_dsh_client_ui_primitives.IconNewChatOutlineRegular,{size:16}),t('rail.newChat')),
-                    h('div',{className:'dsh-drawer-sessions'},renderSlot('sidebar.workspaces',{wide:true,expandSidebar:()=>{if(collapsed)toggleSidebar();}})))));
+                    h('div',{className:'dsh-drawer-sessions'},renderSlot('sidebar.workspaces',{wide:true,expandSidebar:()=>{if(collapsed&&!preview)toggleSidebar();}})))));
         }
 
 		//#endregion
