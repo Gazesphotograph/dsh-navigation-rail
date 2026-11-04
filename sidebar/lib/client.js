@@ -55,46 +55,87 @@ window.__ModuleLoader__.load({
 		* @param props - Injected sidebar actions plus the sidebar locale seat.
 		* @returns the two window-chrome controls.
 		*/
-		function HeaderLeadingControls({ toggleSidebar, startSession, trackEntryClick, useShortcuts, t }) {
-			const shortcut = useShortcuts((rows) => rows.find((row) => row.id === "sidebar.left.toggle"));
-			const newShortcut = useShortcuts((rows) => rows.find((row) => row.id === "session.new"));
-			return (0, react_jsx_runtime.jsxs)("div", {
-				className: HeaderLeadingControls_module_css_default.controls,
-				children: [(0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
-					label: t("toggle.open"),
-					shortcutKeys: shortcut?.keys,
-					delayMs: 500,
-					children: (0, react_jsx_runtime.jsx)("button", {
-						type: "button",
-						className: HeaderLeadingControls_module_css_default.iconButton,
-						"aria-label": t("toggle.open"),
-						"aria-keyshortcuts": shortcut?.aria,
-						onClick: () => {
-							toggleSidebar();
-						},
-						children: (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconPanelLeftOutlineRegular, { size: 16 })
-					})
-				}), (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
-					label: t("session.new.label"),
-					shortcutKeys: newShortcut?.keys,
-					delayMs: 500,
-					children: (0, react_jsx_runtime.jsx)("button", {
-						type: "button",
-						className: HeaderLeadingControls_module_css_default.iconButton,
-						"aria-label": t("session.new.label"),
-						"aria-keyshortcuts": newShortcut?.aria,
-						onClick: () => {
-							trackEntryClick({
-								menu_name: "new_session",
-								position: "titlebar"
-							});
-							startSession();
-						},
-						children: (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconNewChatOutlineRegular, { size: 16 })
-					})
-				})]
-			});
-		}
+        // Keep navigation inside the application: browser history would leave the
+        // authenticated desktop document. Coalesce panel/session changes per turn.
+        function createNavigation(ctx, workspace) {
+            const store = _deepseek_ai_dsh_client_store.createSnapshotStore({back:false,forward:false});
+            const entries=[];
+            let index=-1, queued=false, restoring=false, disposed=false;
+            const read=()=>({panel:ctx.layout.panelInfo.getSnapshot().activePanelId,selection:workspace.selection.getSnapshot()});
+            const key=value=>JSON.stringify([value.panel,value.selection.sessionId,value.selection.subagentAddress]);
+            const publish=()=>store.set({back:index>0,forward:index<entries.length-1});
+            const record=()=>{
+                if(disposed||restoring)return;
+                const value=read();
+                if(index>=0&&key(entries[index])===key(value))return;
+                entries.splice(index+1);entries.push(value);
+                if(entries.length>100)entries.shift();
+                index=entries.length-1;publish();
+            };
+            const schedule=()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;record();});};
+            const go=delta=>{
+                record();
+                const next=index+delta;
+                if(restoring||next<0||next>=entries.length)return;
+                const value=entries[next];
+                restoring=true;
+                try {
+                    const target=value.selection.subagentAddress??value.selection.sessionId;
+                    if(target===undefined)workspace.clearMain();else workspace.openSession(target);
+                    ctx.layout.selectPanel(value.panel);
+                    index=next;publish();
+                } catch(error) {console.warn('Navigation target unavailable',error);}
+                finally {queueMicrotask(()=>{restoring=false;});}
+            };
+            ctx.effect(()=>{
+                const stopPanel=ctx.layout.panelInfo.subscribe(schedule);
+                const stopSelection=workspace.selection.subscribe(schedule);
+                record();
+                const action=event=>{
+                    switch(event.detail){
+                        case 'back':go(-1);break;
+                        case 'forward':go(1);break;
+                        case 'sidebar':ctx.layout.toggleSidebar();break;
+                        case 'home':case 'new':workspace.startSession();break;
+                        case 'search':{
+                            const entry=ctx.shortcuts.registry?.commands?.get('session.search');
+                            // Use the registered shortcut's own action if available.
+                            if(entry?.resolve){const result=entry.resolve({modal:null});if(result?.status==='handled')result.run();}
+                            else {document.querySelector('.dsh-drawer-sessions button[aria-label="搜索会话"]')?.click();}
+                            break;
+                        }
+                        case 'rightbar':document.querySelector('[data-sidebar-right-toggle]')?.click();break;
+                    }
+                };
+                window.addEventListener('dsh-shell-action',action);
+                return ()=>{disposed=true;stopPanel();stopSelection();window.removeEventListener('dsh-shell-action',action);};
+            },'navigation: panel and session history');
+            for(const [id,code,label] of [['back','ArrowLeft','rail.back'],['forward','ArrowRight','rail.forward']])ctx.effect(()=>{
+                const binding={code,modifiers:['alt']};
+                return ctx.shortcuts.registerFixed({id:'navigation.'+id,label:()=>ctx.locale.bind('sidebar')(label),keys:ctx.shortcuts.describeBinding(binding).keys,bindings:[binding],group:'application'});
+            },'navigation: fixed history reference '+id);
+            ctx.effect(()=>ctx.shortcuts.observeFixedInput(input=>{
+                if(input.type==='reset')return;
+                const {gesture,context}=input;
+                if(gesture.composing||gesture.defaultPrevented||gesture.repeat||context.modal!==null||context.region==='terminal')return;
+                if(!gesture.alt||gesture.control||gesture.shift||gesture.meta)return;
+                if(gesture.code!=='ArrowLeft'&&gesture.code!=='ArrowRight')return;
+                input.consume();go(gesture.code==='ArrowLeft'?-1:1);
+            }),'navigation: fixed history input');
+            return {store,back:()=>go(-1),forward:()=>go(1)};
+        }
+
+        function HeaderLeadingControls({collapsed,toggleSidebar,useNavigation,navigateBack,navigateForward,t}) {
+            const h=react.createElement;
+            const state=useNavigation(value=>value);
+            const glyph=(path)=>h('svg',{width:16,height:16,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.6,strokeLinecap:'round',strokeLinejoin:'round','aria-hidden':true},h('path',{d:path}));
+            const button=(label,action,icon,extra={})=>h('button',{type:'button',className:'dsh-caption-button',title:label,'aria-label':label,onClick:action,...extra},icon);
+            return h('div',{className:'dsh-caption-controls'},
+                button(t('rail.back')+' (Alt+←)',navigateBack,glyph('M19 12H5m6-6-6 6 6 6'),{disabled:!state.back,'aria-keyshortcuts':'Alt+ArrowLeft'}),
+                button(t('rail.forward')+' (Alt+→)',navigateForward,glyph('M5 12h14m-6-6 6 6-6 6'),{disabled:!state.forward,'aria-keyshortcuts':'Alt+ArrowRight'}),
+                button(t(collapsed?'toggle.open':'toggle.collapse')+' (Ctrl+B)',toggleSidebar,h(_deepseek_ai_dsh_client_ui_primitives.IconPanelLeftOutlineRegular,{size:16}),{'aria-expanded':!collapsed,'aria-controls':'dsh-conversation-drawer','aria-keyshortcuts':'Control+B'}));
+        }
+
 		//#endregion
 		//#region ../../../node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
 		function r(e) {
@@ -288,15 +329,60 @@ window.__ModuleLoader__.load({
 		* @returns the sidebar element tree.
 		*/
         const RAIL_CSS = `
+/* Home composition reuses the shipped composer and its live session sources. */
+.an3WzG_composerHero{gap:0;padding-bottom:32px;max-width:820px}
+.an3WzG_composerHero .WOwLGG_root{padding:0 20px;margin-bottom:26px;height:auto;min-height:36px}
+.an3WzG_composerHero .WOwLGG_headline{font-size:28px;line-height:38px;font-weight:600;letter-spacing:-.5px}
+.an3WzG_composerHero .WOwLGG_fishHitbox,.an3WzG_composerHero .WOwLGG_previewBadge,.an3WzG_composerHero .WOwLGG_body{display:none}
+.an3WzG_composerHero .an3WzG_heroWorkspaceRow{order:10;box-sizing:border-box;position:relative;z-index:10;flex-wrap:wrap;gap:12px;margin:-12px 28px 0;padding:20px 14px 10px;min-height:62px;border-radius:24px;background:var(--dsw-alias-bg-layer-1)}
+.an3WzG_heroWorkspaceRow .WOwLGG_workspace{max-width:min(48%,280px);height:30px;min-height:30px;border-radius:8px;font-size:13px;font-weight:500}
+.an3WzG_heroWorkspaceRow .m2hUqa_menuAnchor{order:3}
+.an3WzG_heroWorkspaceRow .m2hUqa_seat{height:30px;border-radius:8px}
+.an3WzG_heroWorkspaceRow .an3WzG_heroOptions{order:2;margin-left:0;flex:none}
+.an3WzG_heroWorkspaceRow > [data-slot="conversation.hero.workspace"] > span{position:absolute}
+.an3WzG_heroWorkspaceRow .WOwLGG_workspace,.an3WzG_heroWorkspaceRow .dsh-home-files,.an3WzG_heroWorkspaceRow .m2hUqa_seat{box-sizing:border-box;height:32px;min-height:32px;padding:0 10px;gap:6px;border-radius:10px;font-size:13px;font-weight:500}
+.an3WzG_composerHero .GRgSLq_root{position:relative;z-index:11}
+.an3WzG_composerHero .GRgSLq_card{border-radius:24px;min-height:128px}
+.an3WzG_composerHero .GRgSLq_row{margin-top:auto;padding:2px 10px 8px}
+.an3WzG_composerHero .GRgSLq_primary{transform:none}
+.an3WzG_composerHero .GRgSLq_input,.an3WzG_composerHero .GRgSLq_placeholder{font-size:14px}
+.dsh-home-files{display:inline-flex;align-items:center;gap:6px;box-sizing:border-box;height:30px;padding:0 9px;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.dsh-home-files:hover,.dsh-home-files[aria-expanded=true]{background:var(--dsw-alias-interactive-bg-hover)}
+.dsh-home-files:disabled{opacity:.45;cursor:default}
+.dsh-home-files:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-2px}
+html[data-windows-titlebar]:root{--dsh-windows-menu-start:112px!important}
+[data-windows-titlebar] .mP3x-q_leadingSeat{position:absolute;left:8px;top:4px;height:32px;z-index:1200}
+.dsh-caption-controls{display:flex;align-items:center;gap:2px;-webkit-app-region:no-drag}
+.dsh-caption-button{width:30px;height:30px;display:grid;place-items:center;padding:0;background:transparent;color:var(--dsw-alias-label-secondary);border:0;border-radius:6px;cursor:pointer}
+.dsh-caption-button:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.dsh-caption-button:disabled{opacity:.28;cursor:default;background:transparent}
+.dsh-caption-button:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-2px}
+.dsh-rail-button[aria-current=page]{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary)}
+.dsh-navigation-shell .dsh-drawer-content{padding:16px 16px 12px;gap:14px}
+.dsh-navigation-shell .dsh-drawer-sessions{margin-right:0}
+.dsh-drawer-sessions .GAkraW_root:not(.GAkraW_rail) .GAkraW_sectionHeader{margin-right:0;margin-bottom:8px;gap:8px}
+.dsh-drawer-sessions .GAkraW_headerActions{gap:8px}
+.dsh-drawer-sessions .GAkraW_headerActions:not(.GAkraW_headerActionsHidden){max-width:64px}
+@media(max-width:680px){.an3WzG_composerHero .an3WzG_heroWorkspaceRow{margin-left:24px;margin-right:24px}.an3WzG_composerHero .WOwLGG_headline{font-size:24px}.an3WzG_composerHero .WOwLGG_root{margin-bottom:20px}.an3WzG_composerHero .GRgSLq_card{min-height:120px}}
+@media(max-height:540px){.an3WzG_composerHero{padding-top:20px;padding-bottom:16px}.an3WzG_composerHero .WOwLGG_root{margin-bottom:16px}}
+@media(forced-colors:active){.dsh-rail-button[aria-current=page]{outline:1px solid Highlight}.an3WzG_composerHero .an3WzG_heroWorkspaceRow{border:1px solid ButtonText}}
+
         .dsh-navigation-shell{height:100%;min-width:0;display:flex;overflow:hidden;color:var(--dsw-alias-label-primary)}
-        .dsh-function-rail{box-sizing:border-box;width:56px;min-width:56px;height:100%;display:flex;align-items:center;flex-direction:column;padding:10px 0 8px;gap:8px;border-right:.5px solid var(--dsw-alias-border-l3)}
+        .dsh-function-rail{box-sizing:border-box;width:56px;min-width:56px;height:100%;display:flex;align-items:center;flex-direction:column;padding:10px 0 8px;gap:8px;border-right:0}
         .dsh-rail-button{box-sizing:border-box;width:36px;height:36px;flex:none;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:transparent;color:inherit;cursor:pointer;padding:0}
         .dsh-rail-button:hover,.dsh-rail-button[aria-expanded=true]{background:var(--dsw-alias-interactive-bg-hover)}
         .dsh-rail-button:focus-visible,.dsh-drawer-new:focus-visible,.dsh-drawer-close:focus-visible{outline:2px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}
         .dsh-rail-nav{display:flex;flex:1;min-height:0;width:56px;align-items:center;gap:8px;flex-direction:column;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
         .dsh-rail-nav button{flex:none}.dsh-rail-footer{flex:none;display:flex;align-items:center;flex-direction:column;gap:8px;width:56px}
         .dsh-rail-account,.dsh-rail-extra{display:flex;justify-content:center;width:56px;min-width:0}.dsh-rail-extra:empty{display:none}
-        html[data-windows-titlebar]:root{--dsh-windows-menu-start:56px!important}
+        html[data-windows-titlebar]:root{--dsh-windows-menu-start:112px!important}
+        /* One continuous hairline around the conversation workspace, outside the fixed rail. */
+        .mP3x-q_frame:has(.dsh-navigation-shell)>.mP3x-q_sidebarCol{border-right:0}
+        .mP3x-q_frame[data-sidebar-collapsed=true]:has(.dsh-navigation-shell)>.mP3x-q_sidebarCol{box-shadow:none}
+        .mP3x-q_frame:has(.dsh-navigation-shell)::after{content:"";position:absolute;inset:var(--dsh-frame-chrome-top,0px) 0 0 56px;box-sizing:border-box;border:1px solid color-mix(in srgb,var(--dsw-alias-label-primary) 16%,transparent);border-radius:14px 0 0 14px;pointer-events:none;z-index:12}
+        .mP3x-q_frame:has(.dsh-navigation-shell) .dsh-conversation-drawer{border-radius:14px 0 0 14px}
+        .mP3x-q_frame[data-sidebar-collapsed=true]:has(.dsh-navigation-shell)>.mP3x-q_centerCol{border-radius:14px 0 0 14px}
+
         .dsh-conversation-drawer{box-sizing:border-box;height:100%;min-width:0;overflow:hidden;flex:none;opacity:1;transform:translateX(0);transition:width 220ms cubic-bezier(.22,.61,.36,1),opacity 180ms ease,transform 220ms cubic-bezier(.22,.61,.36,1),visibility 0s}
         .dsh-conversation-drawer[data-closed=true]{opacity:0;transform:translateX(-8px);visibility:hidden;pointer-events:none;transition:width 220ms cubic-bezier(.22,.61,.36,1),opacity 140ms ease,transform 220ms cubic-bezier(.22,.61,.36,1),visibility 0s linear 220ms}
         .dsh-drawer-content{box-sizing:border-box;height:100%;display:flex;flex-direction:column;padding:12px 12px 8px;gap:12px}
@@ -411,7 +497,7 @@ window.__ModuleLoader__.load({
             return h('div', {className:'dsh-navigation-shell','data-conversations-hidden':collapsed||undefined},
                 h('style',null,RAIL_CSS),
                 h('aside', {className:'dsh-function-rail','aria-label':t('panels.label')},
-                    iconButton(toggleLabel,toggleSidebar,h(_deepseek_ai_dsh_client_ui_primitives.IconPanelLeftOutlineRegular,{size:19}),{'aria-expanded':!collapsed,'aria-controls':'dsh-conversation-drawer','aria-keyshortcuts':shortcut?.aria}),
+                    iconButton(t('rail.home'),openNew,h('svg',{width:19,height:19,viewBox:'0 0 24 24',fill:'currentColor','aria-hidden':true},h('path',{d:'M3.5 10.1 11 3.7a1.5 1.5 0 0 1 2 0l7.5 6.4v9.2a1.7 1.7 0 0 1-1.7 1.7h-4.3v-6.3h-5V21H5.2a1.7 1.7 0 0 1-1.7-1.7z'})),{'aria-current':activePanelId===null?'page':undefined}),
                     h('nav',{className:'dsh-rail-nav '+SidebarRoot_module_css_default.collapsed,'aria-label':t('panels.label')},
                         panels.filter(({id})=>id==='plugins'||!unpinned.includes(id)).map(({id,label})=>h(PanelRow,{key:id,id,label,wide:false,usePanelInfo,selectPanel,trackEntryClick,renderSlot})),
                         hasEntryActions && h(PanelMoreMenu,{wide:false,label:t('panels.more'),entries:panels.filter(p=>p.id!=='plugins').map(p=>({...p,pinned:!unpinned.includes(p.id),active:p.id===activePanelId})),onOpen:selectPanel,onPinnedChange:setPinned,trackEntryClick,renderSlot})),
@@ -453,8 +539,8 @@ window.__ModuleLoader__.load({
 		/** Dictionary namespace owned by this plugin. */
 		const NS = "sidebar";
 		/** Services required by the sidebar plugin. */
-		Object.assign(zh, {"rail.newChat":"新对话", "rail.ten":"10 元", "rail.total":"总余额", "rail.remaining":"剩余 {percent}%", "rail.chats":"会话", "rail.balance":"充值余额", "rail.segment":"每圈 ¥10", "rail.reserve":"另有 {count} 份 ¥10", "rail.refresh":"点击刷新余额", "rail.loading":"正在读取余额…", "rail.unavailable":"余额暂不可用 · 点击重试", "rail.signedOut":"登录后查看余额"});
-		Object.assign(en, {"rail.newChat":"New chat", "rail.ten":"¥10", "rail.total":"Total balance", "rail.remaining":"{percent}% left", "rail.chats":"Conversations", "rail.balance":"Topped-up balance", "rail.segment":"¥10 per ring", "rail.reserve":"Plus {count} × ¥10", "rail.refresh":"Click to refresh balance", "rail.loading":"Loading balance…", "rail.unavailable":"Balance unavailable · click to retry", "rail.signedOut":"Sign in to view balance"});
+		Object.assign(zh, {"rail.home":"主页","rail.back":"返回","rail.forward":"前进","rail.noHistory":"暂无浏览记录","rail.newChat":"新对话", "rail.ten":"10 元", "rail.total":"总余额", "rail.remaining":"剩余 {percent}%", "rail.chats":"会话", "rail.balance":"充值余额", "rail.segment":"每圈 ¥10", "rail.reserve":"另有 {count} 份 ¥10", "rail.refresh":"点击刷新余额", "rail.loading":"正在读取余额…", "rail.unavailable":"余额暂不可用 · 点击重试", "rail.signedOut":"登录后查看余额"});
+		Object.assign(en, {"rail.home":"Home","rail.back":"Back","rail.forward":"Forward","rail.noHistory":"No navigation history","rail.newChat":"New chat", "rail.ten":"¥10", "rail.total":"Total balance", "rail.remaining":"{percent}% left", "rail.chats":"Conversations", "rail.balance":"Topped-up balance", "rail.segment":"¥10 per ring", "rail.reserve":"Plus {count} × ¥10", "rail.refresh":"Click to refresh balance", "rail.loading":"Loading balance…", "rail.unavailable":"Balance unavailable · click to retry", "rail.signedOut":"Sign in to view balance"});
 		const inject = [
 			"slots",
 			"layout",
@@ -472,7 +558,8 @@ window.__ModuleLoader__.load({
 				zh,
 				en
 			}), "ui-sidebar: dictionaries");
-			const panels = (0, _deepseek_ai_dsh_client_store.createSnapshotStore)([]);
+			const navigation = createNavigation(ctx,workspaceNavigation);
+            const panels = (0, _deepseek_ai_dsh_client_store.createSnapshotStore)([]);
 			const syncPanels = () => {
 				const next = ctx.slots.entriesOfSlot("sidebar.panellist").map(({ options }) => {
 					const id = options.id;
@@ -498,6 +585,7 @@ window.__ModuleLoader__.load({
 			};
 			const injectProps = () => ({
 				refreshBalance: railBalance.refresh,
+                navigateBack:navigation.back,navigateForward:navigation.forward,
 				startSession: (workspaceId) => {
 					workspaceNavigation.startSession(workspaceId);
 				},
@@ -513,6 +601,7 @@ window.__ModuleLoader__.load({
 				},
 				hooks: {
 					balance: railBalance.store,
+                    navigation:navigation.store,
 					panels,
 					shortcuts: ctx.shortcuts.catalog,
 					entryPins: panelPins.unpinned,

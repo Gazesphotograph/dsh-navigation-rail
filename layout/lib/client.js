@@ -312,8 +312,8 @@ window.__ModuleLoader__.load({
 				renderSlot
 			}), [usePanelInfo, renderSlot]);
 			const overlays = (0, react.useMemo)(() => renderSlot("shell.overlay", {}), [renderSlot]);
-			const leading = (0, react.useMemo)(() => renderSlot("shell.leading", {}), [renderSlot]);
-			const leadingMounted = false; // The persistent rail owns its controls on every platform.
+			const leading = (0, react.useMemo)(() => renderSlot("shell.leading", {collapsed:sidebarCollapsed}), [renderSlot,sidebarCollapsed]);
+			const leadingMounted = document.documentElement.hasAttribute("data-windows-titlebar");
 			return (0, react_jsx_runtime.jsxs)("div", {
 				ref: frameRef,
 				className: AppFrame_module_css_default.frame,
