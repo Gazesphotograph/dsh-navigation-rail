@@ -1,0 +1,11 @@
+- id: ui-layout
+  disabled: true
+- id: ui-sidebar
+  disabled: true
+- insert:
+    - id: windows-rail-layout
+      name: "./layout/lib/index.js"
+    - id: windows-rail-sidebar
+      name: "./sidebar/lib/index.js"
+    - id: navigation-boot-guard
+      name: '@local/dsh-navigation-rail'

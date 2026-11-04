@@ -1,0 +1,574 @@
+window.__ModuleLoader__.load({
+	id: "@deepseek-ai/dsh-client-ui-sidebar",
+	factory: (require) => {
+		var module = { exports: {} };
+		var exports = module.exports;
+		Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
+		let _deepseek_ai_dsh_client_store = require("@deepseek-ai/dsh-client-store");
+		let _deepseek_ai_dsh_client_ui_slots = require("@deepseek-ai/dsh-client-ui-slots");
+		let react_jsx_runtime = require("react/jsx-runtime");
+		let _deepseek_ai_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
+		let react = require("react");
+		const NO_PANELS = [];
+		/**
+		* Create the in-memory panel pin list; the snapshot keeps its reference until the list changes.
+		* @returns Unpinned panel ids and the pin mutation.
+		*/
+		function createPanelPins() {
+			const store = (0, _deepseek_ai_dsh_client_store.createSnapshotStore)({ unpinned: NO_PANELS });
+			return {
+				unpinned: {
+					getSnapshot: () => store.getSnapshot().unpinned,
+					subscribe: (listener) => store.subscribe(listener)
+				},
+				setPinned: (id, pinned) => {
+					const current = store.getSnapshot().unpinned;
+					if (id === "plugins" || pinned !== current.includes(id)) return;
+					store.set({ unpinned: pinned ? current.filter((entry) => entry !== id) : [...current, id] });
+				}
+			};
+		}
+		//#endregion
+		//#region \0dsh-css:D:\ci\runners\github\_work\deepseek-harness\deepseek-harness\packages\client\ui-sidebar\src\client\HeaderLeadingControls.module.css.mjs
+		const css$1 = ".hc2fJa_controls{align-items:center;gap:8px;display:flex}.hc2fJa_iconButton{border-radius:var(--dsw-radius-sm);width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex}.hc2fJa_iconButton:hover{background:var(--dsw-alias-interactive-bg-hover)}";
+		const tagId$1 = "@deepseek-ai/dsh-client-ui-sidebar/HeaderLeadingControls.module.css";
+		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$1) + "]") === null) {
+			const tag = document.createElement("style");
+			tag.dataset.plugin = "@deepseek-ai/dsh-client-ui-sidebar";
+			tag.dataset.pluginCss = tagId$1;
+			tag.textContent = css$1;
+			document.head.appendChild(tag);
+		}
+		var HeaderLeadingControls_module_css_default = {
+			"controls": "hc2fJa_controls",
+			"iconButton": "hc2fJa_iconButton"
+		};
+		//#endregion
+		//#region lib/types/client/HeaderLeadingControls.js
+		/** Window-chrome controls for the fully hidden sidebar (frame shell.leading seat). */
+		/**
+		* Sidebar-open and New Session controls in the frame's window-chrome seat.
+		* On macOS desktop a collapsed sidebar hides entirely (no rail), taking both
+		* controls off screen; this occupant puts them back beside the traffic
+		* lights. The frame mounts the seat only in that state and owns its
+		* placement, so the occupant renders unconditionally.
+		* @param props - Injected sidebar actions plus the sidebar locale seat.
+		* @returns the two window-chrome controls.
+		*/
+		function HeaderLeadingControls({ toggleSidebar, startSession, trackEntryClick, useShortcuts, t }) {
+			const shortcut = useShortcuts((rows) => rows.find((row) => row.id === "sidebar.left.toggle"));
+			const newShortcut = useShortcuts((rows) => rows.find((row) => row.id === "session.new"));
+			return (0, react_jsx_runtime.jsxs)("div", {
+				className: HeaderLeadingControls_module_css_default.controls,
+				children: [(0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
+					label: t("toggle.open"),
+					shortcutKeys: shortcut?.keys,
+					delayMs: 500,
+					children: (0, react_jsx_runtime.jsx)("button", {
+						type: "button",
+						className: HeaderLeadingControls_module_css_default.iconButton,
+						"aria-label": t("toggle.open"),
+						"aria-keyshortcuts": shortcut?.aria,
+						onClick: () => {
+							toggleSidebar();
+						},
+						children: (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconPanelLeftOutlineRegular, { size: 16 })
+					})
+				}), (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
+					label: t("session.new.label"),
+					shortcutKeys: newShortcut?.keys,
+					delayMs: 500,
+					children: (0, react_jsx_runtime.jsx)("button", {
+						type: "button",
+						className: HeaderLeadingControls_module_css_default.iconButton,
+						"aria-label": t("session.new.label"),
+						"aria-keyshortcuts": newShortcut?.aria,
+						onClick: () => {
+							trackEntryClick({
+								menu_name: "new_session",
+								position: "titlebar"
+							});
+							startSession();
+						},
+						children: (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconNewChatOutlineRegular, { size: 16 })
+					})
+				})]
+			});
+		}
+		//#endregion
+		//#region ../../../node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
+		function r(e) {
+			var t, f, n = "";
+			if ("string" == typeof e || "number" == typeof e) n += e;
+			else if ("object" == typeof e) if (Array.isArray(e)) {
+				var o = e.length;
+				for (t = 0; t < o; t++) e[t] && (f = r(e[t])) && (n && (n += " "), n += f);
+			} else for (f in e) e[f] && (n && (n += " "), n += f);
+			return n;
+		}
+		function clsx() {
+			for (var e, t, f = 0, n = "", o = arguments.length; f < o; f++) (e = arguments[f]) && (t = r(e)) && (n && (n += " "), n += t);
+			return n;
+		}
+		//#endregion
+		//#region \0dsh-css:D:\ci\runners\github\_work\deepseek-harness\deepseek-harness\packages\client\ui-sidebar\src\client\SidebarRoot.module.css.mjs
+		const css = ".wtg9ga_root{--dsh-sidebar-inline-padding:12px;height:100%;padding:6px var(--dsh-sidebar-inline-padding);box-sizing:border-box;background:var(--dsw-specific-sidebar-fill);color:var(--dsw-alias-label-primary);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2);flex-direction:column;font-size:14px;display:flex}[data-platform=darwin] .wtg9ga_root{background:0 0}.wtg9ga_root.wtg9ga_collapsed{padding:18px 10px 6px}[data-windows-titlebar] .wtg9ga_root .wtg9ga_logoRow{height:40px;margin:0;padding:0}[data-windows-titlebar] .wtg9ga_toggle{top:calc((var(--dsh-windows-titlebar-height) - 28px) / 2);z-index:30;-webkit-app-region:no-drag;position:fixed;left:12px}[data-windows-titlebar] .wtg9ga_root.wtg9ga_collapsed .wtg9ga_logoRow{height:0}[data-windows-titlebar] .wtg9ga_root:not(.wtg9ga_collapsed) .wtg9ga_brand{padding-left:4px}[data-windows-titlebar] .wtg9ga_brandIdentity{transform:translateY(1px)}[data-windows-titlebar] .wtg9ga_brandMark{transform:translate(1px)}[data-windows-titlebar] .wtg9ga_brandName{font-weight:400}[data-windows-titlebar] .wtg9ga_root.wtg9ga_collapsed{padding:0}[data-windows-titlebar] .wtg9ga_root:not(.wtg9ga_collapsed) .wtg9ga_newSession{margin-top:8px;margin-left:0}[data-windows-titlebar] .wtg9ga_collapsed .wtg9ga_regionArea{display:none}html[data-windows-titlebar]:has([data-sidebar-collapsed=true]){--dsh-windows-menu-start:84px}[data-windows-titlebar] .wtg9ga_collapsed .wtg9ga_newSession{top:calc((var(--dsh-windows-titlebar-height) - 28px) / 2);z-index:30;-webkit-app-region:no-drag;border:none;margin:0;padding:0;position:fixed;left:48px}[data-windows-titlebar] .wtg9ga_railIn .wtg9ga_iconButton,[data-windows-titlebar] .wtg9ga_railIn .wtg9ga_newSession{animation:none}[data-windows-titlebar] .wtg9ga_collapsed .wtg9ga_toggle,[data-windows-titlebar] .wtg9ga_collapsed .wtg9ga_newSession{border-radius:var(--dsw-radius-sm);width:28px;height:28px;color:var(--dsw-alias-label-secondary)}[data-windows-titlebar] .wtg9ga_collapsed .wtg9ga_toggle .wtg9ga_panelIcon{display:inline}.wtg9ga_root.wtg9ga_quietBars{--dsh-scrollbar-thumb:transparent;--dsh-scrollbar-thumb-hover:transparent}.wtg9ga_fading>*{opacity:0;transition:opacity .15s var(--ds-ease-in-out)}.wtg9ga_wide{animation:wtg9ga_wide-in .2s var(--ds-ease-in-out)}@keyframes wtg9ga_wide-in{0%{opacity:0}}.wtg9ga_railIn .wtg9ga_iconButton,.wtg9ga_railIn .wtg9ga_newSession,.wtg9ga_railIn .wtg9ga_panelList,.wtg9ga_railIn .wtg9ga_regionArea{animation:wtg9ga_rail-in .15s var(--ds-ease-in-out) backwards}.wtg9ga_railIn .wtg9ga_footArea{animation:wtg9ga_rail-fade-in .15s var(--ds-ease-in-out) backwards}@keyframes wtg9ga_rail-in{0%{opacity:0;transform:translate(49px)}}@keyframes wtg9ga_rail-fade-in{0%{opacity:0}}.wtg9ga_topStrip{box-sizing:border-box;height:52px;margin:-6px calc(-1 * var(--dsh-sidebar-inline-padding)) 0;flex:none;justify-content:flex-end;align-items:center;padding:0 12px 2px;display:flex}[data-fullscreen] .wtg9ga_topStrip{justify-content:flex-start}.wtg9ga_topStrip+.wtg9ga_logoRow{margin-top:-12px}.wtg9ga_logoRow{box-sizing:border-box;flex:none;justify-content:flex-end;align-items:center;gap:8px;height:60px;margin-bottom:4px;padding:8px 0 8px 4px;display:flex;overflow:hidden}.wtg9ga_collapsed .wtg9ga_logoRow{justify-content:flex-start;height:36px;margin-bottom:12px;padding:0;overflow:visible}.wtg9ga_brand{min-width:0;color:inherit;cursor:pointer;background:0 0;border:none;flex:1;align-items:center;padding:0;display:inline-flex;overflow:hidden}[data-platform=darwin] .wtg9ga_brand{cursor:default}.wtg9ga_brandIdentity{align-items:center;gap:8px;min-width:0;height:24px;display:inline-flex}.wtg9ga_brandMark{flex:none;justify-content:center;align-items:center;display:inline-flex}.wtg9ga_brandName{letter-spacing:.04em;align-items:center;gap:6px;min-width:0;height:24px;font-size:18px;font-weight:600;line-height:24px;display:inline-flex}.wtg9ga_fallbackBrandName{letter-spacing:0;white-space:nowrap;font-size:17px}.wtg9ga_localBuildBrand{white-space:nowrap;flex-direction:column;flex:none;justify-content:center;align-items:flex-start;gap:1px;height:24px;display:inline-flex}.wtg9ga_localBuildTitle{letter-spacing:0;font-size:12px;line-height:13px}.wtg9ga_iconButton{border-radius:var(--dsw-radius-sm);cursor:pointer;width:28px;height:28px;color:var(--dsw-alias-label-secondary);background:0 0;border:none;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex;position:relative}.wtg9ga_iconButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.wtg9ga_iconButton.wtg9ga_toggle:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}.wtg9ga_collapsed .wtg9ga_iconButton{border-radius:var(--dsw-radius-md);width:36px;height:36px}.wtg9ga_collapsed .wtg9ga_toggle .wtg9ga_panelIcon{display:none}.wtg9ga_collapsed .wtg9ga_toggle:hover .wtg9ga_panelIcon{display:inline}.wtg9ga_collapsed .wtg9ga_toggle:hover .wtg9ga_railMark{display:none}.wtg9ga_railMark{justify-content:center;align-items:center;display:inline-flex}.wtg9ga_collapsed .wtg9ga_iconButton{color:var(--dsw-alias-label-primary)}.wtg9ga_buildVersion{height:10px;color:var(--dsw-alias-label-primary-inverted);background:var(--dsw-alias-label-primary);font-family:var(--ds-font-family-code);white-space:nowrap;border-radius:2px;flex:none;align-items:center;padding:0 3px;font-size:6px;font-weight:500;line-height:10px;display:inline-flex}.wtg9ga_newSession{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-button-elevated-fill);height:38px;color:var(--dsw-alias-label-primary);cursor:pointer;flex:none;justify-content:center;align-items:center;gap:0;margin:0 2px 12px;padding:8px 12px;font-size:14px;font-weight:500;line-height:22px;display:flex;position:relative;overflow:hidden;container-type:inline-size}.wtg9ga_newSession:hover{background:var(--dsw-alias-button-floating-hover)}[data-platform=darwin] .wtg9ga_newSession{background:#ffffff8c}[data-platform=darwin] .wtg9ga_newSession:hover{background:#ffffff4d}[data-platform=darwin] [data-ds-dark-theme] .wtg9ga_newSession{background:#ffffff26}[data-platform=darwin] [data-ds-dark-theme] .wtg9ga_newSession:hover{background:#fff3}.wtg9ga_collapsed .wtg9ga_newSession{background:0 0;border-color:#0000;align-self:flex-start;gap:0;width:36px;height:36px;margin:0 0 12px;padding:0}.wtg9ga_collapsed .wtg9ga_newSession:hover{background:var(--dsw-alias-interactive-bg-hover)}.wtg9ga_newSessionLabel{white-space:nowrap;max-width:200px;overflow:hidden}.wtg9ga_collapsed .wtg9ga_newSessionLabel{max-width:0}.wtg9ga_newSessionLabelMask{flex:1;min-width:0}.wtg9ga_newSession:is(:hover,:focus-visible) .wtg9ga_newSessionLabelMask:has(+.wtg9ga_newSessionShortcut){overflow:hidden;mask-image:linear-gradient(90deg,#000 calc(100% - 16px),#0000)}.wtg9ga_newSessionContent{justify-content:center;align-items:center;gap:6px;width:100cqw;display:flex}.wtg9ga_newSessionContent>svg{flex:none}.wtg9ga_newSessionShortcut{opacity:0;pointer-events:none;flex:none;font-weight:400;display:inline-flex}.wtg9ga_newSession:is(:hover,:focus-visible) .wtg9ga_newSessionShortcut{opacity:1}.wtg9ga_panelList{flex-direction:column;flex:none;gap:2px;margin-bottom:8px;display:flex}.wtg9ga_panelRow{box-sizing:border-box;border-radius:var(--dsw-radius-md);min-height:36px;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;cursor:pointer;background:0 0;border:none;align-items:center;gap:8px;margin:0 2px;padding:7px 8px;line-height:22px;display:flex}.wtg9ga_panelRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.wtg9ga_panelRow.wtg9ga_panelActive{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.wtg9ga_panelRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}.wtg9ga_moreAnchor{flex-direction:column;display:flex}.wtg9ga_panelRow[aria-expanded=true]{background:var(--dsw-alias-interactive-bg-hover)}.wtg9ga_moreMenu{width:288px;max-width:calc(100vw - 24px)}.wtg9ga_panelGlyph{flex:none;justify-content:center;align-items:center;display:inline-flex}.wtg9ga_panelTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.wtg9ga_collapsed .wtg9ga_panelList{gap:12px;margin-bottom:12px}.wtg9ga_collapsed .wtg9ga_panelRow{width:36px;height:36px;color:var(--dsw-alias-label-primary);justify-content:center;margin:0;padding:0}.wtg9ga_regionArea{min-height:0;margin-left:-4px;margin-right:calc(-1 * var(--dsh-sidebar-inline-padding));flex-direction:column;flex:1;padding-left:4px;display:flex;overflow:hidden}.wtg9ga_collapsed .wtg9ga_regionArea{margin-left:0;margin-right:0;padding-left:0}.wtg9ga_footArea{flex-direction:column;flex:none;display:flex}.wtg9ga_settingsArea,.wtg9ga_footerActions{flex:none;width:100%;min-width:0}.wtg9ga_footerActions{display:flex}.wtg9ga_collapsed .wtg9ga_footArea{align-items:center}.wtg9ga_collapsed .wtg9ga_settingsArea,.wtg9ga_collapsed .wtg9ga_footerActions{justify-content:center;width:auto;display:flex}@media (prefers-reduced-motion:reduce){.wtg9ga_wide,.wtg9ga_fading>*,.wtg9ga_railIn .wtg9ga_iconButton,.wtg9ga_railIn .wtg9ga_newSession,.wtg9ga_railIn .wtg9ga_panelList,.wtg9ga_railIn .wtg9ga_footArea,.wtg9ga_railIn .wtg9ga_regionArea{transition:none;animation:none}}[data-windows-titlebar] .wtg9ga_root.wtg9ga_collapsed{padding:10px 10px 8px}[data-windows-titlebar] .wtg9ga_collapsed .wtg9ga_logoRow{margin:0}[data-windows-titlebar] .wtg9ga_collapsed .wtg9ga_panelList{display:flex;min-height:0;flex:1;align-items:center;gap:8px;margin:0 0 8px;overflow-y:auto;overflow-x:hidden}[data-windows-titlebar] .wtg9ga_collapsed .wtg9ga_panelRow{flex:none}[data-windows-titlebar] .wtg9ga_collapsed .wtg9ga_footArea{display:flex}";
+		const tagId = "@deepseek-ai/dsh-client-ui-sidebar/SidebarRoot.module.css";
+		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
+			const tag = document.createElement("style");
+			tag.dataset.plugin = "@deepseek-ai/dsh-client-ui-sidebar";
+			tag.dataset.pluginCss = tagId;
+			tag.textContent = css;
+			document.head.appendChild(tag);
+		}
+		var SidebarRoot_module_css_default = {
+			"brand": "wtg9ga_brand",
+			"brandIdentity": "wtg9ga_brandIdentity",
+			"brandMark": "wtg9ga_brandMark",
+			"brandName": "wtg9ga_brandName",
+			"buildVersion": "wtg9ga_buildVersion",
+			"collapsed": "wtg9ga_collapsed",
+			"fading": "wtg9ga_fading",
+			"fallbackBrandName": "wtg9ga_fallbackBrandName",
+			"footArea": "wtg9ga_footArea",
+			"footerActions": "wtg9ga_footerActions",
+			"iconButton": "wtg9ga_iconButton",
+			"localBuildBrand": "wtg9ga_localBuildBrand",
+			"localBuildTitle": "wtg9ga_localBuildTitle",
+			"logoRow": "wtg9ga_logoRow",
+			"moreAnchor": "wtg9ga_moreAnchor",
+			"moreMenu": "wtg9ga_moreMenu",
+			"newSession": "wtg9ga_newSession",
+			"newSessionContent": "wtg9ga_newSessionContent",
+			"newSessionLabel": "wtg9ga_newSessionLabel",
+			"newSessionLabelMask": "wtg9ga_newSessionLabelMask",
+			"newSessionShortcut": "wtg9ga_newSessionShortcut",
+			"panelActive": "wtg9ga_panelActive",
+			"panelGlyph": "wtg9ga_panelGlyph",
+			"panelIcon": "wtg9ga_panelIcon",
+			"panelList": "wtg9ga_panelList",
+			"panelRow": "wtg9ga_panelRow",
+			"panelTitle": "wtg9ga_panelTitle",
+			"quietBars": "wtg9ga_quietBars",
+			"rail-fade-in": "wtg9ga_rail-fade-in",
+			"rail-in": "wtg9ga_rail-in",
+			"railIn": "wtg9ga_railIn",
+			"railMark": "wtg9ga_railMark",
+			"regionArea": "wtg9ga_regionArea",
+			"root": "wtg9ga_root",
+			"settingsArea": "wtg9ga_settingsArea",
+			"toggle": "wtg9ga_toggle",
+			"topStrip": "wtg9ga_topStrip",
+			"wide": "wtg9ga_wide",
+			"wide-in": "wtg9ga_wide-in"
+		};
+		//#endregion
+		//#region lib/types/client/SidebarRoot.js
+		/**
+		* Sidebar shell: column geometry and global panel navigation.
+		* Collapse is a slide plus crossfade:
+		* content freezes at its expanded width (inline style) and fades out in place
+		* while the sliding column (AppFrame grid tracks) clips it — nothing reflows
+		* mid-slide. At settle the wide-only content unmounts and the upper
+		* controls enter the 56px rail from the same horizontal offset (one icon each,
+		* same top-down order) on one fade that ends with the slide. The bottom-pinned
+		* settings control only fades. The workspace/session browsing region between
+		* global panel rows and the foot is the `sidebar.workspaces` registrant's,
+		* and the foot holds `sidebar.settings` plus `sidebar.footer.action`; the shell
+		* hands them the wide flag (plus an expand request callback for the browser).
+		*
+		* The column also owns whether the scroll regions nested in it draw a
+		* scrollbar at all: the shell tracks the pointer and rebinds ui-theme's
+		* scrollbar indirection away while it is elsewhere, so a list the user is not
+		* pointing at carries no bar.
+		*/
+		/** Wide-content unmount delay; matches the 150ms wide-content fade-out. */
+		const COLLAPSE_SETTLE_MS = 150;
+		/**
+		* How long the column's scrollbars stay drawn after the pointer leaves it.
+		* The bar is a pointer affordance here, and hiding it on the leave event
+		* itself makes it blink out while the pointer is only crossing the column's
+		* edge — on the way to the conversation, or around a portalled menu.
+		*/
+		const SCROLLBAR_LINGER_MS = 2e3;
+		/** Format complete-build metadata for the local brand badge. */
+		function localBuildVersion() {
+			return `0.2.1-rc.5-d4db512` + ({}.DSH_CLIENT_GIT_DIRTY === "true" ? "-dirty" : "");
+		}
+		/** Analytics category of an official panel; other panels are never reported. */
+		function officialEntry(id) {
+			if (id === "plugins") return "plugin";
+			return id === "schedules" ? "cron" : void 0;
+		}
+		/** Each panel row subscribes only to its own selection state. */
+		function PanelRow({ id, label, wide, usePanelInfo, selectPanel, trackEntryClick, renderSlot }) {
+			const active = usePanelInfo((info) => info.activePanelId === id);
+			return (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
+				label,
+				delayMs: 500,
+				disabled: wide,
+				children: (0, react_jsx_runtime.jsxs)("button", {
+					type: "button",
+					className: clsx(SidebarRoot_module_css_default.panelRow, active && SidebarRoot_module_css_default.panelActive),
+					"aria-label": label,
+					"aria-current": active ? "page" : void 0,
+					onClick: () => {
+						const entry = officialEntry(id);
+						if (entry !== void 0) trackEntryClick({
+							menu_name: entry,
+							position: "sidebar"
+						});
+						selectPanel(id);
+					},
+					children: [(0, react_jsx_runtime.jsx)("span", {
+						className: SidebarRoot_module_css_default.panelGlyph,
+						"aria-hidden": "true",
+						children: renderSlot("sidebar.panellist", {
+							size: wide ? 16 : 18,
+							active
+						}, { only: id })
+					}), wide && (0, react_jsx_runtime.jsx)("span", {
+						className: clsx(SidebarRoot_module_css_default.panelTitle, SidebarRoot_module_css_default.wide),
+						children: label
+					})]
+				})
+			});
+		}
+		/** The panel list's More launcher: a panel-row button whose menu rows come from `sidebar.panellist.actions`. */
+		function PanelMoreMenu({ wide, label, entries, onOpen, onPinnedChange, trackEntryClick, renderSlot }) {
+			const [open, setOpen] = (0, react.useState)(false);
+			const onDismiss = () => {
+				setOpen(false);
+			};
+			return (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Menu, {
+				open,
+				onClose: onDismiss,
+				portal: true,
+				autoFocus: true,
+				className: SidebarRoot_module_css_default.moreAnchor,
+				listClassName: SidebarRoot_module_css_default.moreMenu,
+				anchor: (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
+					label,
+					delayMs: 500,
+					disabled: wide,
+					children: (0, react_jsx_runtime.jsxs)("button", {
+						type: "button",
+						className: SidebarRoot_module_css_default.panelRow,
+						"aria-label": label,
+						"aria-haspopup": "menu",
+						"aria-expanded": open,
+						onClick: () => {
+							trackEntryClick({
+								menu_name: "more",
+								position: "sidebar"
+							});
+							setOpen((value) => !value);
+						},
+						children: [(0, react_jsx_runtime.jsx)("span", {
+							className: SidebarRoot_module_css_default.panelGlyph,
+							"aria-hidden": "true",
+							children: (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconAppsAddOutlineRegular, { size: wide ? 16 : 18 })
+						}), wide && (0, react_jsx_runtime.jsx)("span", {
+							className: clsx(SidebarRoot_module_css_default.panelTitle, SidebarRoot_module_css_default.wide),
+							children: label
+						})]
+					})
+				}),
+				children: renderSlot("sidebar.panellist.actions", {
+					entries,
+					onOpen,
+					onPinnedChange,
+					onDismiss
+				})
+			});
+		}
+		/**
+		* Render the sidebar column shell.
+		* @param props - composed slot props (runtime share + injected callbacks, contract/slots.ts).
+		* @returns the sidebar element tree.
+		*/
+        const RAIL_CSS = `
+        .dsh-navigation-shell{height:100%;min-width:0;display:flex;overflow:hidden;color:var(--dsw-alias-label-primary)}
+        .dsh-function-rail{box-sizing:border-box;width:56px;min-width:56px;height:100%;display:flex;align-items:center;flex-direction:column;padding:10px 0 8px;gap:8px;border-right:.5px solid var(--dsw-alias-border-l3)}
+        .dsh-rail-button{box-sizing:border-box;width:36px;height:36px;flex:none;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:transparent;color:inherit;cursor:pointer;padding:0}
+        .dsh-rail-button:hover,.dsh-rail-button[aria-expanded=true]{background:var(--dsw-alias-interactive-bg-hover)}
+        .dsh-rail-button:focus-visible,.dsh-drawer-new:focus-visible,.dsh-drawer-close:focus-visible{outline:2px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}
+        .dsh-rail-nav{display:flex;flex:1;min-height:0;width:56px;align-items:center;gap:8px;flex-direction:column;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+        .dsh-rail-nav button{flex:none}.dsh-rail-footer{flex:none;display:flex;align-items:center;flex-direction:column;gap:8px;width:56px}
+        .dsh-rail-account,.dsh-rail-extra{display:flex;justify-content:center;width:56px;min-width:0}.dsh-rail-extra:empty{display:none}
+        html[data-windows-titlebar]:root{--dsh-windows-menu-start:56px!important}
+        .dsh-conversation-drawer{box-sizing:border-box;height:100%;min-width:0;overflow:hidden;flex:none;opacity:1;transform:translateX(0);transition:width 220ms cubic-bezier(.22,.61,.36,1),opacity 180ms ease,transform 220ms cubic-bezier(.22,.61,.36,1),visibility 0s}
+        .dsh-conversation-drawer[data-closed=true]{opacity:0;transform:translateX(-8px);visibility:hidden;pointer-events:none;transition:width 220ms cubic-bezier(.22,.61,.36,1),opacity 140ms ease,transform 220ms cubic-bezier(.22,.61,.36,1),visibility 0s linear 220ms}
+        .dsh-drawer-content{box-sizing:border-box;height:100%;display:flex;flex-direction:column;padding:12px 12px 8px;gap:12px}
+        .dsh-drawer-header{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px;flex:none}
+        .dsh-drawer-brand{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;min-width:0;white-space:nowrap}.dsh-drawer-brand>svg{flex:none}.dsh-drawer-brand>span{overflow:hidden;text-overflow:ellipsis}
+        .dsh-drawer-wordmark{display:flex;align-items:center;min-width:0}.dsh-drawer-wordmark svg{max-width:190px;max-height:26px}
+        .dsh-drawer-close{background:transparent;color:var(--dsw-alias-label-tertiary);border:0;border-radius:7px;width:28px;height:28px;display:grid;place-items:center;cursor:pointer;flex:none}
+        .dsh-drawer-close:hover{background:var(--dsw-alias-interactive-bg-hover);color:inherit}.dsh-drawer-new{display:flex;justify-content:flex-start;align-items:center;gap:9px;width:100%;min-height:36px;padding:8px 10px;flex:none;border:0;border-radius:9px;background:transparent;color:inherit;font:inherit;font-size:13px;line-height:20px;cursor:pointer;text-align:left;transition:background 140ms ease}.dsh-drawer-new:hover{background:var(--dsw-alias-interactive-bg-hover)}.dsh-drawer-new:active{background:var(--dsw-alias-interactive-bg-active)}.dsh-drawer-new>svg{flex:none;opacity:.85}
+        .dsh-drawer-sessions{display:flex;flex-direction:column;flex:1;min-height:0;margin-left:-4px;margin-right:-12px;padding-left:4px;overflow:hidden}
+        .dsh-balance-button{position:relative;flex-direction:column;width:36px;height:38px;min-height:38px;padding:0;border-radius:10px;color:var(--dsw-alias-label-secondary)}.dsh-balance-button svg{display:block;flex:none;overflow:visible}
+        .dsh-balance-arc{transform-origin:18px 18px;transition:transform 180ms ease,opacity 180ms ease;opacity:.6}.dsh-balance-track{stroke:currentColor;opacity:.28}.dsh-balance-fill{stroke:currentColor;transition:stroke-dashoffset .35s ease}.dsh-balance-total{stroke:currentColor;opacity:.55}
+        .dsh-balance-button:is(:hover,:focus-visible)[data-indicator=segment] .dsh-balance-upper,.dsh-balance-button:is(:hover,:focus-visible)[data-indicator=total] .dsh-balance-lower{transform:scale(1.12);opacity:1}
+        .dsh-balance-button[data-status=failed]{opacity:.5}.dsh-balance-dot{fill:currentColor;opacity:.6}.dsh-balance-multiple{position:absolute;right:-1px;bottom:-4px;max-width:34px;font-size:9px;line-height:11px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary);background:var(--dsw-specific-sidebar-fill);border-radius:4px;padding:0 2px;overflow:hidden;text-overflow:ellipsis}
+        html[data-as-reduced-motion=true] .dsh-conversation-drawer,html[data-as-reduced-motion=true] .dsh-balance-fill,html[data-as-reduced-motion=true] .dsh-balance-arc{transition:none}
+        @media(prefers-reduced-motion:reduce){.mP3x-q_frame,.dsh-balance-fill,.dsh-conversation-drawer,.dsh-balance-arc{transition:none!important}}
+        `;
+
+        // Split the integer decimal string before converting the sub-10 remainder.
+        // This avoids rounding 9.99999 up to 10 or losing a large reserve count.
+        function splitYuan(amount) {
+            const raw=String(amount);
+            if(!/^-?\d+(?:\.\d+)?$/.test(raw)) return null;
+            const [whole,decimal='']=raw.replace(/^-/,'').split('.');
+            const negative=raw.startsWith('-');
+            const count=negative?0n:BigInt(whole)/10n;
+            const remainder=negative?0:Number(`${Number(BigInt(whole)%10n)}.${decimal||'0'}`);
+            const fraction=Math.max(0,Math.min(1,remainder/10));
+            const tiny=BigInt(whole)===0n&&/^00/.test(decimal)&&/[1-9]/.test(decimal);
+            const display=(negative?'-':'')+BigInt(whole).toString()+'.'+(tiny?decimal.replace(/0+$/,''):decimal.slice(0,2).padEnd(2,'0'));
+            return {fraction,count:count.toString(),remainder,display};
+        }
+
+        function createRailBalance(ctx) {
+            const store=_deepseek_ai_dsh_client_store.createSnapshotStore({status:'loading'});
+            let disposed=false, generation=0, signedIn=false, inFlight;
+            const cancellations=new Set();
+            const publish=value=>{if(!disposed)store.set(value);};
+            const refresh=()=>{
+                if(disposed||!signedIn)return Promise.resolve();
+                if(inFlight)return inFlight;
+                const current=generation;
+                publish({...store.getSnapshot(),refreshing:true});
+                let timeout,cancel;
+                const request=Promise.race([
+                    Promise.resolve().then(()=>ctx.remote.account.getBalance({version:'0.2.1-rc.5',locale:ctx.locale.getSnapshot().active,timezoneOffsetSeconds:-new Date().getTimezoneOffset()*60})),
+                    new Promise((_,reject)=>{cancel=()=>reject(new Error('Balance reader disposed'));cancellations.add(cancel);timeout=setTimeout(()=>reject(new Error('Balance read timed out')),20000);})
+                ]).then(result=>{
+                    if(disposed||generation!==current)return;
+                    const value=result.ok&&result.value?.status==='ready'?result.value.value:null;
+                    const wallet=Array.isArray(value)?value.find(w=>w.currency==='CNY'):null;
+                    const segment=wallet?splitYuan(wallet.balance):null;
+                    // No implicit USD conversion and no simulated zero on failures.
+                    publish(segment?{status:'ready',...segment,updated:Date.now()}:{status:'failed'});
+                }).catch(()=>{if(!disposed&&generation===current)publish({status:'failed'});}).finally(()=>{clearTimeout(timeout);cancellations.delete(cancel);if(inFlight===request)inFlight=undefined;});
+                inFlight=request;
+                return request;
+            };
+            const stream=ctx.remote.$stream({name:'navigation-rail-account',open:signal=>ctx.remote.account.watch(signal),ended:()=>new Error('Account state stream ended')});
+            ctx.effect(()=>{
+                (async()=>{for await(const frame of stream){
+                    if(disposed)break;
+                    generation++;inFlight=undefined;
+                    signedIn=frame.value.status==='credential-stored';
+                    publish({status:signedIn?'loading':'signedOut'});
+                    frame.accept();
+                    if(signedIn)void refresh();
+                }})().catch(()=>{if(!disposed){generation++;signedIn=false;publish({status:'failed'});}});
+                const visible=()=>{if(document.visibilityState!=='hidden')void refresh();};
+                const timer=setInterval(visible,60000);
+                window.addEventListener('focus',visible);
+                document.addEventListener('visibilitychange',visible);
+                return ()=>{disposed=true;generation++;for(const cancel of cancellations)cancel();cancellations.clear();clearInterval(timer);window.removeEventListener('focus',visible);document.removeEventListener('visibilitychange',visible);void stream.dispose();};
+            },'navigation rail: balance account stream and refresh lifetime');
+            return {store,refresh};
+        }
+
+        function BalanceRing({useBalance,refreshBalance,t}) {
+            const h=react.createElement;
+            const value=useBalance(s=>s);
+            const [indicator,setIndicator]=react.useState('segment');
+            const ready=value.status==='ready';
+            const reserve=ready&&value.count!=='0';
+            const label=ready?`${t('rail.balance')} ¥${value.display} · ${t('rail.segment')}${reserve?' · '+t('rail.reserve',{count:value.count}):''} · ${t('rail.refresh')}`:t('rail.'+(value.status==='signedOut'?'signedOut':value.status==='loading'?'loading':'unavailable'));
+            const tooltip=ready?(indicator==='segment'?`${t('rail.ten')} · ${t('rail.remaining',{percent:Math.floor(value.fraction*100)})}`:`${t('rail.total')} · ¥${value.display}`):label;
+            const upper='M5.5 16 A12.7 12.7 0 0 1 30.5 16';
+            const lower='M30.5 20 A12.7 12.7 0 0 1 5.5 20';
+            return h(_deepseek_ai_dsh_client_ui_primitives.Tooltip,{label:tooltip,side:'right',delayMs:120,portal:true},
+                h('button',{type:'button',className:'dsh-rail-button dsh-balance-button','aria-label':label,'aria-busy':value.refreshing||value.status==='loading','data-status':value.status,'data-indicator':indicator,onPointerMove:event=>{const rect=event.currentTarget.getBoundingClientRect();setIndicator(event.clientY<rect.top+rect.height/2?'segment':'total');},onKeyDown:event=>{if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault();setIndicator(event.key==='ArrowUp'?'segment':'total');}},onClick:()=>{void refreshBalance();}},
+                    h('svg',{width:30,height:30,viewBox:'0 0 36 36','aria-hidden':true},
+                        h('g',{className:'dsh-balance-arc dsh-balance-upper'},
+                            h('path',{className:'dsh-balance-track',d:upper,fill:'none',strokeWidth:1.8,strokeLinecap:'round'}),
+                            ready&&h('path',{className:'dsh-balance-fill',d:upper,fill:'none',strokeWidth:1.8,pathLength:100,strokeDasharray:'100 100',strokeDashoffset:100-value.fraction*100,strokeLinecap:'round',opacity:value.fraction===0?0:1})),
+                        h('g',{className:'dsh-balance-arc dsh-balance-lower'},h('path',{className:'dsh-balance-total',d:lower,fill:'none',strokeWidth:1.8,strokeLinecap:'round',strokeDasharray:ready?undefined:'2 4'})),
+                        h('circle',{className:'dsh-balance-dot',cx:18,cy:18,r:2.5})),
+                    reserve&&h('span',{className:'dsh-balance-multiple','aria-hidden':true},value.count+'×')));
+        }
+
+		function SidebarRoot({ collapsed, width, startSession, toggleSidebar, selectPanel, setPinned, trackEntryClick, usePanels, useEntryPins, useEntryActions, useShortcuts, usePanelInfo, useBalance, refreshBalance, t, renderSlot }) {
+            const h = react.createElement;
+            const panels = usePanels(s => s);
+            const unpinned = useEntryPins(s => s);
+            const activePanelId = usePanelInfo(s => s.activePanelId);
+            const hasEntryActions = useEntryActions(s => s);
+            const shortcut = useShortcuts(rows => rows.find(row => row.id === 'sidebar.left.toggle'));
+            const newShortcut = useShortcuts(rows => rows.find(row => row.id === 'session.new'));
+            const toggleLabel = collapsed ? t('toggle.open') : t('toggle.collapse');
+            const drawerWidth=react.useRef(Math.max(264,width-56));
+            if(!collapsed)drawerWidth.current=Math.max(264,width-56);
+            const openNew = () => { trackEntryClick({menu_name:'new_session',position:'sidebar'}); startSession(); };
+            const iconButton = (label, action, glyph, extra={}) => h(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {label,side:'right',delayMs:350},
+                h('button',{type:'button',className:'dsh-rail-button','aria-label':label,onClick:action,...extra},glyph));
+            return h('div', {className:'dsh-navigation-shell','data-conversations-hidden':collapsed||undefined},
+                h('style',null,RAIL_CSS),
+                h('aside', {className:'dsh-function-rail','aria-label':t('panels.label')},
+                    iconButton(toggleLabel,toggleSidebar,h(_deepseek_ai_dsh_client_ui_primitives.IconPanelLeftOutlineRegular,{size:19}),{'aria-expanded':!collapsed,'aria-controls':'dsh-conversation-drawer','aria-keyshortcuts':shortcut?.aria}),
+                    h('nav',{className:'dsh-rail-nav '+SidebarRoot_module_css_default.collapsed,'aria-label':t('panels.label')},
+                        panels.filter(({id})=>id==='plugins'||!unpinned.includes(id)).map(({id,label})=>h(PanelRow,{key:id,id,label,wide:false,usePanelInfo,selectPanel,trackEntryClick,renderSlot})),
+                        hasEntryActions && h(PanelMoreMenu,{wide:false,label:t('panels.more'),entries:panels.filter(p=>p.id!=='plugins').map(p=>({...p,pinned:!unpinned.includes(p.id),active:p.id===activePanelId})),onOpen:selectPanel,onPinnedChange:setPinned,trackEntryClick,renderSlot})),
+                    h('div',{className:'dsh-rail-footer'},
+                        h(BalanceRing,{useBalance,refreshBalance,t}),
+                        h('div',{className:'dsh-rail-extra'},renderSlot('sidebar.footer.action',{wide:false})),
+                        h('div',{className:'dsh-rail-account'},renderSlot('sidebar.settings',{wide:false})))),
+                h('section',{id:'dsh-conversation-drawer',className:'dsh-conversation-drawer','data-closed':collapsed||undefined,'aria-hidden':collapsed,inert:collapsed?'':undefined,'aria-label':t('rail.chats'),style:{width:collapsed?0:Math.max(0,width-56)}},
+                  h('div',{className:'dsh-drawer-content',style:{width:drawerWidth.current}},
+                    h('header',{className:'dsh-drawer-header'},
+                        h('span',{className:'dsh-drawer-brand'},renderSlot('sidebar.brand.mark',{size:23},{fallback:h(_deepseek_ai_dsh_client_ui_primitives.FishLogo,{size:23})}),h('span',{className:'dsh-drawer-wordmark'},renderSlot('sidebar.brand.name',{},{fallback:'DeepSeek Harness'})))),
+                    h('button',{type:'button',className:'dsh-drawer-new','aria-label':t('session.new.label'),'aria-keyshortcuts':newShortcut?.aria,onClick:openNew},h(_deepseek_ai_dsh_client_ui_primitives.IconNewChatOutlineRegular,{size:16}),t('rail.newChat')),
+                    h('div',{className:'dsh-drawer-sessions'},renderSlot('sidebar.workspaces',{wide:true,expandSidebar:()=>{if(collapsed)toggleSidebar();}})))));
+        }
+
+		//#endregion
+		//#region lib/types/client/locales.js
+		/** `sidebar` namespace dictionaries for shell controls and global panels. */
+		/** Simplified Chinese dictionary (the key-set source of truth). */
+		const zh = {
+			"session.new": "新会话",
+			"session.new.label": "新建会话",
+			"toggle.open": "展开会话列表",
+			"toggle.collapse": "收起会话列表",
+			"panels.label": "全局面板",
+			"panels.more": "更多"
+		};
+		/** English dictionary, checked complete against the zh key set. */
+		const en = {
+			"session.new": "New Session",
+			"session.new.label": "New session",
+			"toggle.open": "Open conversations",
+			"toggle.collapse": "Hide conversations",
+			"panels.label": "Global panels",
+			"panels.more": "More"
+		};
+		//#endregion
+		//#region lib/types/client/index.js
+		/** Dictionary namespace owned by this plugin. */
+		const NS = "sidebar";
+		/** Services required by the sidebar plugin. */
+		Object.assign(zh, {"rail.newChat":"新对话", "rail.ten":"10 元", "rail.total":"总余额", "rail.remaining":"剩余 {percent}%", "rail.chats":"会话", "rail.balance":"充值余额", "rail.segment":"每圈 ¥10", "rail.reserve":"另有 {count} 份 ¥10", "rail.refresh":"点击刷新余额", "rail.loading":"正在读取余额…", "rail.unavailable":"余额暂不可用 · 点击重试", "rail.signedOut":"登录后查看余额"});
+		Object.assign(en, {"rail.newChat":"New chat", "rail.ten":"¥10", "rail.total":"Total balance", "rail.remaining":"{percent}% left", "rail.chats":"Conversations", "rail.balance":"Topped-up balance", "rail.segment":"¥10 per ring", "rail.reserve":"Plus {count} × ¥10", "rail.refresh":"Click to refresh balance", "rail.loading":"Loading balance…", "rail.unavailable":"Balance unavailable · click to retry", "rail.signedOut":"Sign in to view balance"});
+		const inject = [
+			"slots",
+			"layout",
+			"uiWorkspace",
+			"locale",
+			"shortcuts", "remote", "remote.account"
+		];
+		/** Registers the sidebar shell and its service callbacks.
+		* @param ctx - Client root context.
+		*/
+		function apply(ctx) {
+			const workspaceNavigation = ctx.get("uiWorkspace");
+			const railBalance = createRailBalance(ctx);
+			ctx.effect(() => ctx.locale.register(NS, {
+				zh,
+				en
+			}), "ui-sidebar: dictionaries");
+			const panels = (0, _deepseek_ai_dsh_client_store.createSnapshotStore)([]);
+			const syncPanels = () => {
+				const next = ctx.slots.entriesOfSlot("sidebar.panellist").map(({ options }) => {
+					const id = options.id;
+					return {
+						id,
+						order: options.order ?? 0,
+						label: (0, _deepseek_ai_dsh_client_ui_slots.resolveSlotLabel)(options.label) ?? id
+					};
+				}).sort((a, b) => a.order - b.order);
+				const previous = panels.getSnapshot();
+				if (previous.length === next.length && previous.every((panel, index) => {
+					const candidate = next[index];
+					return panel.id === candidate.id && panel.order === candidate.order && panel.label === candidate.label;
+				})) return;
+				panels.set(next);
+			};
+			ctx.effect(() => ctx.slots.subscribe("sidebar.panellist", syncPanels), "ui-sidebar: panel entries");
+			ctx.effect(() => ctx.locale.subscribe(syncPanels), "ui-sidebar: panel labels");
+			const panelPins = createPanelPins();
+			const entryActions = {
+				getSnapshot: () => ctx.slots.entriesOfSlot("sidebar.panellist.actions").length > 0,
+				subscribe: (listener) => ctx.slots.subscribe("sidebar.panellist.actions", listener)
+			};
+			const injectProps = () => ({
+				refreshBalance: railBalance.refresh,
+				startSession: (workspaceId) => {
+					workspaceNavigation.startSession(workspaceId);
+				},
+				toggleSidebar: () => {
+					ctx.layout.toggleSidebar();
+				},
+				selectPanel: (id) => {
+					ctx.layout.selectPanel(id);
+				},
+				setPinned: panelPins.setPinned,
+				trackEntryClick: (attributes) => {
+					ctx.get("productAnalytics")?.track("sidebar_menu_click", attributes);
+				},
+				hooks: {
+					balance: railBalance.store,
+					panels,
+					shortcuts: ctx.shortcuts.catalog,
+					entryPins: panelPins.unpinned,
+					entryActions
+				}
+			});
+			ctx.slots.inject("sidebar", () => ctx.slots.register({
+				name: "sidebar",
+				locale: NS,
+				children: {
+					"sidebar.brand.mark": {
+						kind: "single",
+						scope: "root"
+					},
+					"sidebar.brand.name": {
+						kind: "single",
+						scope: "root"
+					},
+					"sidebar.toggle.badge": {
+						kind: "single",
+						scope: "root"
+					},
+					"sidebar.panellist": {
+						kind: "list",
+						scope: "root"
+					},
+					"sidebar.panellist.actions": {
+						kind: "list",
+						scope: "root"
+					},
+					"sidebar.workspaces": {
+						kind: "single",
+						scope: "root"
+					},
+					"sidebar.settings": {
+						kind: "single",
+						scope: "root"
+					},
+					"sidebar.footer.action": {
+						kind: "list",
+						scope: "root"
+					}
+				},
+				inject: injectProps
+			}, SidebarRoot));
+			ctx.slots.inject("shell.leading", () => ctx.slots.register({
+				name: "shell.leading",
+				locale: NS,
+				inject: injectProps
+			}, HeaderLeadingControls));
+			syncPanels();
+		}
+		//#endregion
+		exports.apply = apply;
+		exports.inject = inject;
+		return module.exports;
+	}
+});
+

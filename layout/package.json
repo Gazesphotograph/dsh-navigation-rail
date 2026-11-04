@@ -1,0 +1,36 @@
+{
+  "name": "@deepseek-ai/dsh-client-ui-layout",
+  "description": "Shell plugin: three-column AppFrame with drag handles, ctx.layout viewing-state service (navigation + panels)",
+  "version": "0.2.1-rc.5",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/client/ui-layout"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-session",
+        "@deepseek-ai/dsh-client-ui-theme",
+        "@deepseek-ai/dsh-client-shortcuts"
+      ],
+      "platform": "web"
+    }
+  },
+  "license": "MIT",
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "package.json"
+  ],
+  "private": true
+}

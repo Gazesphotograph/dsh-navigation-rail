@@ -1,0 +1,34 @@
+{
+  "name": "@local/dsh-navigation-rail",
+  "version": "1.2.1",
+  "private": true,
+  "type": "module",
+  "description": "Persistent icon navigation, independent conversation drawer, and a ten-yuan balance ring for DeepSeek Harness 0.2.1-rc.5.",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "layout",
+    "sidebar",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gazesphotograph/dsh-navigation-rail.git"
+  },
+  "engines": {
+    "node": ">=22.15.0"
+  },
+  "scripts": {
+    "test": "node tests/navigation-regression.mjs && node tests/boot-guard-regression.mjs"
+  }
+}
