@@ -1,9 +1,9 @@
 {
   "name": "@local/dsh-navigation-rail",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
-  "description": "ChatGPT-style home, native caption navigation and hover conversation drawer for DeepSeek Harness 0.2.1-rc.5.",
+  "description": "ChatGPT-style home, native caption navigation and hover conversation drawer for DeepSeek Harness 0.2.2-rc.3.",
   "exports": {
     ".": "./index.js",
     "./package.json": "./package.json"
@@ -29,6 +29,10 @@
     "node": ">=22.15.0"
   },
   "scripts": {
-    "test": "node tests/navigation-regression.mjs && node tests/boot-guard-regression.mjs"
+    "test": "node tests/navigation-regression.mjs && node tests/boot-guard-regression.mjs && node tests/sidebar-compatibility.mjs && node tests/balance-compatibility.mjs"
+  },
+  "dshCompatibility": {
+    "testedHarness": "0.2.2-rc.3",
+    "platform": "win32-x64"
   }
 }

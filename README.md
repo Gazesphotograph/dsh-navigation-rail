@@ -2,9 +2,18 @@
 
 为 DeepSeek Harness 提供主页输入区、固定图标导航栏、独立会话抽屉、标题栏导航、余额指示和桌面启动保护。
 
-插件：`@local/dsh-navigation-rail` · 版本：**1.4.0**
+插件：`@local/dsh-navigation-rail` · 版本：**1.5.0**
 
-适用版本：**DeepSeek Harness 0.2.1-rc.5**。
+适用版本：**DeepSeek Harness 0.2.2-rc.3**。
+
+## 1.5.0 更新（2026-11-13）
+
+- 修复新版 AccountUpdate 把登录状态包装在 state 字段后，余额环误显示未登录的问题；补充登录、退出竞态与余额失败重试测试。
+- 将 layout/sidebar 基线更新至 DeepSeek Harness 0.2.2-rc.3，保留主页、56px 导航栏、悬浮会话列表、余额和浏览历史。
+- 适配新版 sidebar.panel.icon 工厂插槽，并传递工作区滚动 hook，修复启动与面板图标兼容问题。
+- 保留新版布局 panelInfo、远程能力检查和插槽声明；增加真实模块注册与渲染回归测试。
+
+配套的原生桌面功能可使用 [外观工作室的版本限定补丁](https://github.com/Gazesphotograph/dsh-appearance-studio#桌面补丁)；安装更新后完整退出并重启 Harness。
 
 ## 功能与数据
 
@@ -13,7 +22,7 @@
 - 充值余额按 10 元档位显示比例及倍数，未登录或读取失败时不伪造为零。
 - 启动时读取当前插件图，避免原生桌面刷新继续使用过期脚本地址。
 
-该插件包含基于 **DeepSeek Harness 0.2.1-rc.5** 修改的 `layout`、`sidebar`
+该插件包含基于 **DeepSeek Harness 0.2.2-rc.3** 修改的 `layout`、`sidebar`
 模块，替代当前 profile 的 `ui-layout` 和 `ui-sidebar`。上游 MIT 许可证分别
 保留在两个子目录中，出处见 `THIRD_PARTY_NOTICES.md`。
 
